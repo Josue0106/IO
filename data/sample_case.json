@@ -1,0 +1,39 @@
+{
+  "facility": {"width": 30, "height": 18},
+  "areas": [
+    {"code": "A1", "name": "Recepcion", "min_area": 18},
+    {"code": "A2", "name": "Caja", "min_area": 12},
+    {"code": "A3", "name": "Informacion academica", "min_area": 20},
+    {"code": "A4", "name": "Bienestar estudiantil", "min_area": 16},
+    {"code": "A5", "name": "Tecnologia de informacion", "min_area": 14},
+    {"code": "A6", "name": "Sala de espera", "min_area": 24},
+    {"code": "A7", "name": "Archivo", "min_area": 10},
+    {"code": "A8", "name": "Coordinacion", "min_area": 15}
+  ],
+  "relations": [
+    {"a": "A1", "b": "A6", "rel": "A"},
+    {"a": "A1", "b": "A3", "rel": "E"},
+    {"a": "A1", "b": "A2", "rel": "A"},
+    {"a": "A2", "b": "A7", "rel": "U"},
+    {"a": "A7", "b": "A6", "rel": "X"},
+    {"a": "A4", "b": "A8", "rel": "E"},
+    {"a": "A5", "b": "A8", "rel": "I"},
+    {"a": "A5", "b": "A3", "rel": "O"},
+    {"a": "A4", "b": "A6", "rel": "I"}
+  ],
+  "flows": [
+    {"origin": "A1", "dest": "A2", "value": 80},
+    {"origin": "A1", "dest": "A3", "value": 120},
+    {"origin": "A1", "dest": "A6", "value": 150},
+    {"origin": "A3", "dest": "A5", "value": 70},
+    {"origin": "A4", "dest": "A8", "value": 60},
+    {"origin": "A2", "dest": "A7", "value": 40},
+    {"origin": "A5", "dest": "A8", "value": 50}
+  ],
+  "relation_weights": {"A": 16, "E": 8, "I": 4, "O": 2, "U": 0, "X": -10},
+  "growth_percent": 0.0,
+  "special_constraints": {
+    "must_adjacent": [],
+    "must_separate": []
+  }
+}
