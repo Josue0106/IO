@@ -13,10 +13,16 @@ def build_relation_matrix(
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     codes = [a.code for a in areas]
     rel_map: Dict[Tuple[str, str], str] = {}
+    codes_set = set(codes)
+    valid_rels = {"A", "E", "I", "O", "U", "X"}
 
     for rel in relations:
         if rel.a == rel.b:
             continue
+        if rel.a not in codes_set or rel.b not in codes_set:
+            raise ValueError(f"Relation references unknown area(s): {rel.a}, {rel.b}")
+        if rel.rel not in valid_rels:
+            raise ValueError(f"Invalid relation symbol '{rel.rel}' for {rel.a}-{rel.b}")
         key = (rel.a, rel.b)
         reverse = (rel.b, rel.a)
         existing = rel_map.get(key) or rel_map.get(reverse)

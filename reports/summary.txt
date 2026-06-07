@@ -1,0 +1,57 @@
+Informe de resultados - Proyecto Layout SLP + Optimización
+Fecha: 2026-06-07
+
+Resumen ejecutivo
+- Caso usado: data/sample_case.json (facility 30 x 18, 8 áreas)
+- Pruebas ejecutadas: 2 (integración SLP + OPT)
+- Resultado de tests: 2 passed (duración total ~122 s)
+
+Artefactos generados
+- tests/output/layout_slp.csv
+- tests/output/layout_slp.png
+- tests/output/layout_opt.csv
+- tests/output/layout_opt.png
+- tests/output/comparison_detailed.csv
+
+Validaciones realizadas
+- CSVs contienen columnas esperadas: code, x, y, w, h.
+- Todas las cajas cumplen 0 ≤ x, y y x+w ≤ 30, y+h ≤ 18 (dentro del recinto).
+- Las imágenes corresponden con las posiciones y tamaños de los CSVs (rectángulos y etiquetas).
+
+Métricas (extraídas de comparison_detailed.csv)
+
+Metadatos:
+- Método: SLP
+  - flow_distance: 8360.0
+  - ae_satisfied: 3.0
+  - x_violations: 0.0
+  - area_utilization: 0.2388888889
+  - compactness: 0.3583333333
+  - avg_aspect_ratio: 1.84375
+  - runtime_s: 0.0394191
+
+- Método: OPT
+  - flow_distance: 2560.0
+  - ae_satisfied: 4.0
+  - x_violations: 0.0
+  - area_utilization: 0.2407407407
+  - compactness: 0.5416666666
+  - avg_aspect_ratio: 12.9166666667
+  - runtime_s: 60.0725152
+  - solver_status: FEASIBLE
+
+Observaciones rápidas
+- OPT reduce significativamente la distancia total de flujo (2560 vs 8360), y satisface más relaciones AE.
+- El solver OPT se ejecutó durante ~60 s (parámetro de tiempo máximo fijado). Devuelve una solución factible.
+- SLP es muy rápido (~0.04 s) pero con peor coste de distancia.
+
+Comandos para reproducir localmente
+```powershell
+$env:PYTHONPATH='src'; .venv2\Scripts\python.exe -m pytest -q
+```
+
+Ruta del informe y próximos pasos
+- Informe (texto plano): reports/summary.txt
+- Si quieres, empaqueto los artefactos en un ZIP o genero un informe CSV/MD adicional con más detalle.
+
+Fin del informe.

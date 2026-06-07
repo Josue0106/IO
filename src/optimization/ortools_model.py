@@ -28,7 +28,7 @@ def _dimension_candidates(min_area: int, max_w: int, max_h: int) -> List[Tuple[i
     return candidates[:50]
 
 
-def solve_layout(case: CaseData, time_limit_s: int = 10, enforce_relations: bool = True) -> OptResult:
+def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool = True) -> OptResult:
     start = time.perf_counter()
     facility = case.facility
     model = cp_model.CpModel()

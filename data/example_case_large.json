@@ -1,0 +1,37 @@
+{
+  "facility": {"width": 60, "height": 40},
+  "areas": [
+    {"code": "C1", "name": "Entrada", "min_area": 30},
+    {"code": "C2", "name": "Administración", "min_area": 50},
+    {"code": "C3", "name": "Aula 1", "min_area": 45},
+    {"code": "C4", "name": "Aula 2", "min_area": 40},
+    {"code": "C5", "name": "Laboratorio", "min_area": 60},
+    {"code": "C6", "name": "Cafetería", "min_area": 35},
+    {"code": "C7", "name": "Archivo", "min_area": 20},
+    {"code": "C8", "name": "Dirección", "min_area": 25},
+    {"code": "C9", "name": "Sala de reuniones", "min_area": 28}
+  ],
+  "relations": [
+    {"a": "C1", "b": "C2", "rel": "A"},
+    {"a": "C2", "b": "C8", "rel": "A"},
+    {"a": "C3", "b": "C5", "rel": "E"},
+    {"a": "C4", "b": "C3", "rel": "I"},
+    {"a": "C6", "b": "C9", "rel": "E"},
+    {"a": "C7", "b": "C2", "rel": "U"},
+    {"a": "C9", "b": "C8", "rel": "A"}
+  ],
+  "flows": [
+    {"origin": "C1", "dest": "C2", "value": 200},
+    {"origin": "C2", "dest": "C8", "value": 80},
+    {"origin": "C3", "dest": "C5", "value": 120},
+    {"origin": "C4", "dest": "C3", "value": 60},
+    {"origin": "C6", "dest": "C9", "value": 90},
+    {"origin": "C9", "dest": "C8", "value": 40}
+  ],
+  "relation_weights": {"A": 16, "E": 8, "I": 4, "O": 2, "U": 0, "X": -10},
+  "growth_percent": 0.05,
+  "special_constraints": {
+    "must_adjacent": [{"a": "C2", "b": "C8"}],
+    "must_separate": [{"a": "C5", "b": "C6"}]
+  }
+}

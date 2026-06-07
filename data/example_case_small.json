@@ -1,0 +1,25 @@
+{
+  "facility": {"width": 20, "height": 12},
+  "areas": [
+    {"code": "B1", "name": "Recepción", "min_area": 10},
+    {"code": "B2", "name": "Oficina 1", "min_area": 8},
+    {"code": "B3", "name": "Oficina 2", "min_area": 8},
+    {"code": "B4", "name": "Archivo", "min_area": 6},
+    {"code": "B5", "name": "Sala", "min_area": 12}
+  ],
+  "relations": [
+    {"a": "B1", "b": "B2", "rel": "A"},
+    {"a": "B1", "b": "B3", "rel": "E"},
+    {"a": "B2", "b": "B4", "rel": "I"},
+    {"a": "B4", "b": "B5", "rel": "O"}
+  ],
+  "flows": [
+    {"origin": "B1", "dest": "B2", "value": 30},
+    {"origin": "B1", "dest": "B3", "value": 20},
+    {"origin": "B2", "dest": "B4", "value": 10},
+    {"origin": "B3", "dest": "B5", "value": 5}
+  ],
+  "relation_weights": {"A": 16, "E": 8, "I": 4, "O": 2, "U": 0, "X": -10},
+  "growth_percent": 0.0,
+  "special_constraints": {"must_adjacent": [], "must_separate": []}
+}

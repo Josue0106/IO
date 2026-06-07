@@ -7,8 +7,10 @@ import pandas as pd
 import streamlit as st
 
 from core.data_model import case_from_dict, case_to_dict, load_case
+from core.validation import validate_case
 from core.matrices import build_relation_matrix
 from core.layout_metrics import Rect, compute_metrics
+from core.comparison import build_comparison_df
 from core.space_matrix import build_space_matrix, build_constraint_table
 from slp.heuristic import slp_layout
 from optimization.ortools_model import solve_layout
@@ -77,6 +79,12 @@ payload["special_constraints"] = {
 
 case_data = case_from_dict(payload)
 
+validation_errors = validate_case(case_data)
+if validation_errors:
+    for e in validation_errors:
+        st.error(e)
+    st.stop()
+
 rel_df, score_df = build_relation_matrix(case_data.areas, case_data.relations, case_data.relation_weights)
 space_df = build_space_matrix(case_data.areas, case_data.growth_percent, case_data.relations, case_data.constraints)
 constraints_df = build_constraint_table(case_data.constraints)
@@ -143,6 +151,22 @@ if slp_result:
     fig = plot_layout(slp_result.layout, case_data.facility.width, case_data.facility.height, "SLP")
     st.pyplot(fig)
 
+    # Export layout: PNG and CSV
+    import io
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+    st.download_button("Descargar layout SLP (PNG)", buf.getvalue(), file_name="layout_slp.png", mime="image/png")
+
+    layout_rows = [
+        {"code": k, "x": r.x, "y": r.y, "w": r.w, "h": r.h} for k, r in slp_result.layout.items()
+    ]
+    layout_df = pd.DataFrame(layout_rows)
+    st.download_button(
+        "Descargar layout SLP (CSV)", layout_df.to_csv(index=False).encode("utf-8"), file_name="layout_slp.csv", mime="text/csv"
+    )
+
     metrics = compute_metrics(
         slp_result.layout,
         case_data.flows,
@@ -156,6 +180,22 @@ if opt_result and opt_result.layout:
     st.subheader("Layout Optimizacion")
     fig = plot_layout(opt_result.layout, case_data.facility.width, case_data.facility.height, "Optimizacion")
     st.pyplot(fig)
+
+    # Export layout: PNG and CSV
+    import io
+
+    buf2 = io.BytesIO()
+    fig.savefig(buf2, format="png", bbox_inches="tight")
+    buf2.seek(0)
+    st.download_button("Descargar layout OPT (PNG)", buf2.getvalue(), file_name="layout_opt.png", mime="image/png")
+
+    layout_rows = [
+        {"code": k, "x": r.x, "y": r.y, "w": r.w, "h": r.h} for k, r in opt_result.layout.items()
+    ]
+    layout_df = pd.DataFrame(layout_rows)
+    st.download_button(
+        "Descargar layout OPT (CSV)", layout_df.to_csv(index=False).encode("utf-8"), file_name="layout_opt.csv", mime="text/csv"
+    )
 
     metrics = compute_metrics(
         opt_result.layout,
@@ -180,5 +220,14 @@ if metrics_data:
         "Descargar comparacion (CSV)",
         comparison_df.to_csv(index=False).encode("utf-8"),
         file_name="comparacion.csv",
+        mime="text/csv",
+    )
+
+    # Detailed comparison with deltas
+    detailed_df = build_comparison_df(metrics_data)
+    st.download_button(
+        "Descargar comparacion detallada (CSV)",
+        detailed_df.to_csv(index=False).encode("utf-8"),
+        file_name="comparacion_detallada.csv",
         mime="text/csv",
     )

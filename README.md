@@ -1,13 +1,8 @@
 # Layout SLP + Optimizacion
 
 Proyecto en Python con interfaz Streamlit para:
-- Matriz relacional (SLP)
-- Heuristica SLP
-- Optimizacion con OR-Tools CP-SAT
-- Comparacion de indicadores
 
 ## Requisitos
-- Python 3.10+
 
 ## Instalacion
 
@@ -20,13 +15,21 @@ pip install -r requirements.txt
 ```bash
 streamlit run src/app.py
 ```
+- Tests
+------
+
+Run the SLP and optimization tests (requires `.venv2` activated or use full path):
+
+```powershell
+$env:PYTHONPATH='src'; .venv2\Scripts\python.exe -m pytest -q
+```
+
+Run the Streamlit app:
+
+```powershell
+$env:PYTHONPATH='src'; .venv2\Scripts\python.exe -m streamlit run src/app.py --server.port 8502
+```
 
 ## Datos
-- Archivo de ejemplo: [data/sample_case.json](data/sample_case.json)
 
 ## Estructura
-- `src/app.py`: UI
-- `src/core`: datos, matrices y metricas
-- `src/slp`: heuristica
-- `src/optimization`: modelo matematico
-- `src/visualization`: graficos
