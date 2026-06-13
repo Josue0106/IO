@@ -1,0 +1,40 @@
+# Python / entornos
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cache y coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Streamlit (configuracion local y secretos)
+.streamlit/secrets.toml
+
+# Salidas generadas del proyecto
+reports/*.txt
+reports/*.csv
+reports/*.png
+
+tests/output/*.csv
+tests/output/*.png
+
+data/bench_results.csv
+
+# Archivos temporales de trabajo
+tmp_*.py
+scripts/tmp_*.py
+*.log
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
