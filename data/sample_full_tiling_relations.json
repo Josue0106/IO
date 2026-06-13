@@ -1,0 +1,26 @@
+{
+  "facility": {"width": 12, "height": 10},
+  "areas": [
+    {"code": "A1", "name": "Module 1", "min_area": 40},
+    {"code": "A2", "name": "Module 2", "min_area": 30},
+    {"code": "A3", "name": "Module 3", "min_area": 20},
+    {"code": "A4", "name": "Module 4", "min_area": 15},
+    {"code": "A5", "name": "Module 5", "min_area": 15}
+  ],
+  "relations": [
+    {"a": "A1", "b": "A2", "rel": "A"},
+    {"a": "A2", "b": "A3", "rel": "A"},
+    {"a": "A4", "b": "A5", "rel": "A"},
+    {"a": "A1", "b": "A4", "rel": "E"},
+    {"a": "A3", "b": "A5", "rel": "E"}
+  ],
+  "flows": [
+    {"origin": "A1", "dest": "A2", "value": 100},
+    {"origin": "A2", "dest": "A3", "value": 80},
+    {"origin": "A1", "dest": "A4", "value": 60},
+    {"origin": "A3", "dest": "A5", "value": 50}
+  ],
+  "relation_weights": {"A": 16, "E": 8, "I": 4, "O": 2, "U": 0, "X": -10},
+  "growth_percent": 0.0,
+  "special_constraints": {"must_adjacent": [], "must_separate": []}
+}

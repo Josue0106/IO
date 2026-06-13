@@ -16,6 +16,7 @@ class OptResult:
     layout: Dict[str, Rect]
     runtime_s: float
     status: str
+    objective_value: float
 
 
 def _dimension_candidates(min_area: int, max_w: int, max_h: int) -> List[Tuple[int, int]]:
@@ -25,28 +26,35 @@ def _dimension_candidates(min_area: int, max_w: int, max_h: int) -> List[Tuple[i
             if w * h >= min_area:
                 candidates.append((w, h))
     candidates.sort(key=lambda wh: (wh[0] * wh[1], abs(wh[0] - wh[1])))
-    return candidates[:50]
+    return candidates[:20]
 
 
-def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool = True) -> OptResult:
-    start = time.perf_counter()
-    facility = case.facility
-    model = cp_model.CpModel()
-
-    x_vars = {}
-    y_vars = {}
-    w_vars = {}
-    h_vars = {}
-    x2_center = {}
-    y2_center = {}
-    x_intervals = {}
-    y_intervals = {}
+def _create_area_variables(
+    case: CaseData,
+    facility,
+    model: cp_model.CpModel,
+) -> Tuple[Dict[str, cp_model.IntVar], Dict[str, cp_model.IntVar], Dict[str, cp_model.IntVar], Dict[str, cp_model.IntVar], Dict[str, cp_model.IntVar], Dict[str, cp_model.IntVar], Dict[str, cp_model.IntervalVar], Dict[str, cp_model.IntervalVar], Dict[str, cp_model.IntVar]]:
+    x_vars: Dict[str, cp_model.IntVar] = {}
+    y_vars: Dict[str, cp_model.IntVar] = {}
+    w_vars: Dict[str, cp_model.IntVar] = {}
+    h_vars: Dict[str, cp_model.IntVar] = {}
+    x2_center: Dict[str, cp_model.IntVar] = {}
+    y2_center: Dict[str, cp_model.IntVar] = {}
+    x_intervals: Dict[str, cp_model.IntervalVar] = {}
+    y_intervals: Dict[str, cp_model.IntervalVar] = {}
+    area_vars: Dict[str, cp_model.IntVar] = {}
 
     for area in case.areas:
         required_area = int(math.ceil(area.min_area * (1.0 + case.growth_percent)))
         w = model.NewIntVar(1, facility.width, f"w_{area.code}")
         h = model.NewIntVar(1, facility.height, f"h_{area.code}")
-        model.AddAllowedAssignments([w, h], _dimension_candidates(required_area, facility.width, facility.height))
+        candidates = _dimension_candidates(required_area, facility.width, facility.height)
+        if not candidates:
+            raise ValueError(f"No feasible dimensions for area {area.code}")
+
+        area_var = model.NewIntVar(1, facility.width * facility.height, f"area_{area.code}")
+        tuples = [(cw, ch, cw * ch) for cw, ch in candidates]
+        model.AddAllowedAssignments([w, h, area_var], tuples)
 
         x = model.NewIntVar(0, facility.width, f"x_{area.code}")
         y = model.NewIntVar(0, facility.height, f"y_{area.code}")
@@ -63,21 +71,27 @@ def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool
         model.Add(x_end == x + w)
         model.Add(y_end == y + h)
 
-        x_interval = model.NewIntervalVar(x, w, x_end, f"xint_{area.code}")
-        y_interval = model.NewIntervalVar(y, h, y_end, f"yint_{area.code}")
-
         x_vars[area.code] = x
         y_vars[area.code] = y
         w_vars[area.code] = w
         h_vars[area.code] = h
         x2_center[area.code] = x2
         y2_center[area.code] = y2
-        x_intervals[area.code] = x_interval
-        y_intervals[area.code] = y_interval
+        x_intervals[area.code] = model.NewIntervalVar(x, w, x_end, f"xint_{area.code}")
+        y_intervals[area.code] = model.NewIntervalVar(y, h, y_end, f"yint_{area.code}")
+        area_vars[area.code] = area_var
 
-    model.AddNoOverlap2D(list(x_intervals.values()), list(y_intervals.values()))
+    return x_vars, y_vars, w_vars, h_vars, x2_center, y2_center, x_intervals, y_intervals, area_vars
 
-    terms = []
+
+def _add_flow_terms(
+    case: CaseData,
+    facility,
+    model: cp_model.CpModel,
+    x2_center: Dict[str, cp_model.IntVar],
+    y2_center: Dict[str, cp_model.IntVar],
+) -> List[cp_model.LinearExpr]:
+    terms: List[cp_model.LinearExpr] = []
     for flow in case.flows:
         dx = model.NewIntVar(0, 2 * facility.width, f"dx_{flow.origin}_{flow.dest}")
         dy = model.NewIntVar(0, 2 * facility.height, f"dy_{flow.origin}_{flow.dest}")
@@ -86,8 +100,19 @@ def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool
         dist = model.NewIntVar(0, 4 * max(facility.width, facility.height), f"dist_{flow.origin}_{flow.dest}")
         model.Add(dist == dx + dy)
         terms.append(dist * flow.value)
+    return terms
 
+
+def _add_special_relation_terms(
+    case: CaseData,
+    facility,
+    model: cp_model.CpModel,
+    x2_center: Dict[str, cp_model.IntVar],
+    y2_center: Dict[str, cp_model.IntVar],
+) -> List[cp_model.LinearExpr]:
+    terms: List[cp_model.LinearExpr] = []
     max_dist = 2 * facility.width + 2 * facility.height
+
     for a_code, b_code in case.constraints.must_adjacent:
         dx = model.NewIntVar(0, 2 * facility.width, f"dx_adj_{a_code}_{b_code}")
         dy = model.NewIntVar(0, 2 * facility.height, f"dy_adj_{a_code}_{b_code}")
@@ -108,6 +133,46 @@ def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool
         model.Add(penalty == max_dist - dist)
         terms.append(penalty * 50)
 
+    return terms
+
+
+def _extract_layout(
+    case: CaseData,
+    solver: cp_model.CpSolver,
+    status: int,
+    x_vars: Dict[str, cp_model.IntVar],
+    y_vars: Dict[str, cp_model.IntVar],
+    w_vars: Dict[str, cp_model.IntVar],
+    h_vars: Dict[str, cp_model.IntVar],
+) -> Dict[str, Rect]:
+    layout: Dict[str, Rect] = {}
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        for area in case.areas:
+            layout[area.code] = Rect(
+                x=solver.Value(x_vars[area.code]),
+                y=solver.Value(y_vars[area.code]),
+                w=solver.Value(w_vars[area.code]),
+                h=solver.Value(h_vars[area.code]),
+            )
+    return layout
+
+
+def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool = True) -> OptResult:
+    start = time.perf_counter()
+    facility = case.facility
+    model = cp_model.CpModel()
+
+    x_vars, y_vars, w_vars, h_vars, x2_center, y2_center, x_intervals, y_intervals, area_vars = _create_area_variables(case, facility, model)
+
+    model.AddNoOverlap2D(list(x_intervals.values()), list(y_intervals.values()))
+
+    # enforce full coverage: sum of chosen areas == facility area
+    if area_vars:
+        model.Add(sum(area_vars.values()) == facility.width * facility.height)
+
+    terms = _add_flow_terms(case, facility, model, x2_center, y2_center)
+    terms.extend(_add_special_relation_terms(case, facility, model, x2_center, y2_center))
+
     if enforce_relations:
         _add_relation_constraints(case, model, x_vars, y_vars, w_vars, h_vars)
 
@@ -118,19 +183,28 @@ def solve_layout(case: CaseData, time_limit_s: int = 60, enforce_relations: bool
 
     status = solver.Solve(model)
 
-    layout = {}
-    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        for area in case.areas:
-            layout[area.code] = Rect(
-                x=solver.Value(x_vars[area.code]),
-                y=solver.Value(y_vars[area.code]),
-                w=solver.Value(w_vars[area.code]),
-                h=solver.Value(h_vars[area.code]),
-            )
+    layout = _extract_layout(case, solver, status, x_vars, y_vars, w_vars, h_vars)
 
     runtime_s = time.perf_counter() - start
     status_name = solver.StatusName(status)
-    return OptResult(layout=layout, runtime_s=runtime_s, status=status_name)
+    objective_value = float(solver.ObjectiveValue()) if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) else float("nan")
+
+    if not layout:
+        try:
+            from optimization.pulp_model import solve_layout as pulp_solve
+
+            fallback = pulp_solve(case, time_limit_s=max(10, time_limit_s // 2))
+            if fallback.layout:
+                return OptResult(
+                    layout=fallback.layout,
+                    runtime_s=runtime_s + fallback.runtime_s,
+                    status=f"{status_name}_FALLBACK_PULP",
+                    objective_value=fallback.objective_value,
+                )
+        except Exception:
+            pass
+
+    return OptResult(layout=layout, runtime_s=runtime_s, status=status_name, objective_value=objective_value)
 
 
 def _add_relation_constraints(

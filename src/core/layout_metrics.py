@@ -44,6 +44,8 @@ def compute_metrics(
 ) -> Dict[str, float]:
     total_flow_distance = 0
     for flow in flows:
+        if flow.origin not in layout or flow.dest not in layout:
+            continue
         rect_a = layout[flow.origin]
         rect_b = layout[flow.dest]
         dist = manhattan_center_distance(rect_a, rect_b)
@@ -88,3 +90,37 @@ def compute_metrics(
         "compactness": float(used_area) / float(bbox_area) if bbox_area else 0.0,
         "avg_aspect_ratio": float(avg_aspect_ratio),
     }
+
+
+def count_relation_satisfaction(layout: Dict[str, Rect], relations: List[Relation]) -> Dict[str, int]:
+    counts = {
+        "a_total": 0,
+        "a_satisfied": 0,
+        "e_total": 0,
+        "e_satisfied": 0,
+        "x_total": 0,
+        "x_violations": 0,
+    }
+
+    for rel in relations:
+        if rel.a not in layout or rel.b not in layout:
+            continue
+
+        rect_a = layout[rel.a]
+        rect_b = layout[rel.b]
+        adjacent = is_adjacent(rect_a, rect_b)
+
+        if rel.rel == "A":
+            counts["a_total"] += 1
+            if adjacent:
+                counts["a_satisfied"] += 1
+        elif rel.rel == "E":
+            counts["e_total"] += 1
+            if adjacent:
+                counts["e_satisfied"] += 1
+        elif rel.rel == "X":
+            counts["x_total"] += 1
+            if adjacent:
+                counts["x_violations"] += 1
+
+    return counts

@@ -1,0 +1,15 @@
+{
+  "facility": {"width": 10, "height": 10},
+  "areas": [
+    {"code": "A1", "name": "Module 1", "min_area": 20},
+    {"code": "A2", "name": "Module 2", "min_area": 20},
+    {"code": "A3", "name": "Module 3", "min_area": 20},
+    {"code": "A4", "name": "Module 4", "min_area": 20},
+    {"code": "A5", "name": "Module 5", "min_area": 20}
+  ],
+  "relations": [],
+  "flows": [],
+  "relation_weights": {"A": 16, "E": 8, "I": 4, "O": 2, "U": 0, "X": -10},
+  "growth_percent": 0.0,
+  "special_constraints": {"must_adjacent": [], "must_separate": []}
+}

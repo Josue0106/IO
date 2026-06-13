@@ -4,30 +4,31 @@ Proyecto en Python con interfaz Streamlit para:
 
 ## Requisitos
 
+- Python 3.10 o superior
+
 ## Instalacion
 
-```bash
-pip install -r requirements.txt
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
 ## Ejecutar
 
-```bash
-streamlit run src/app.py
-```
-- Tests
-------
-
-Run the SLP and optimization tests (requires `.venv2` activated or use full path):
-
 ```powershell
-$env:PYTHONPATH='src'; .venv2\Scripts\python.exe -m pytest -q
+$env:PYTHONPATH='src'
+python -m streamlit run src/app.py --server.port 8502
 ```
 
-Run the Streamlit app:
+## Tests
+
+Con el entorno `.venv` activado:
 
 ```powershell
-$env:PYTHONPATH='src'; .venv2\Scripts\python.exe -m streamlit run src/app.py --server.port 8502
+$env:PYTHONPATH='src'
+python -m pytest -q
 ```
 
 ## Datos
